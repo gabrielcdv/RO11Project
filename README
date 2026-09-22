@@ -1,1 +1,14 @@
 test
+## Setup
+
+    ./setup.sh
+
+This creates a `.venv/` virtualenv and installs the dependencies from
+`requirements.txt` (librosa, matplotlib, numpy, soundfile, pillow, ipykernel).
+
+Manually, if you prefer:
+
+    python3 -m venv .venv
+    .venv/bin/pip install -r requirements.txt
+
+Then select `.venv` as the kernel when opening `prepare_datasets.ipynb`.
