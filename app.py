@@ -18,7 +18,7 @@ EMOTIONS_ALL = [
 # colonnes jugees utiles pour l'exploration (axe X et filtres)
 USEFUL_COLUMNS = [
     "dataset", "emotion", "gender", "language", "speaker", "transcript", "age",
-    "chunk", "emotion.confidence", "emotion.naturalness",
+    "chunk", "emotion.confidence", "emotion.naturalness", "duration"
 ]
 
 
@@ -155,11 +155,19 @@ for col in columns:
 
 st.sidebar.header("Graphique")
 x_axis = st.sidebar.selectbox("Colonne (axe X)", columns)
+use_histogram = st.sidebar.toggle(
+    "Vue distribution (histogramme, pour les colonnes continues comme emotion.naturalness, duration, age)"
+)
 
-st.subheader(f"Nombre de fichiers par {x_axis}")
-counts = filtered[x_axis].value_counts(dropna=False).sort_index()
-counts.index = counts.index.astype(str)
-fig = px.bar(x=counts.index, y=counts.values, labels={"x": x_axis, "y": "nombre de fichiers"})
+if use_histogram:
+    nbins = st.sidebar.slider("Nombre de bins", 5, 200, value=30)
+    st.subheader(f"Distribution de {x_axis}")
+    fig = px.histogram(filtered, x=x_axis, nbins=nbins, labels={x_axis: x_axis})
+else:
+    st.subheader(f"Nombre de fichiers par {x_axis}")
+    counts = filtered[x_axis].value_counts(dropna=False).sort_index()
+    counts.index = counts.index.astype(str)
+    fig = px.bar(x=counts.index, y=counts.values, labels={"x": x_axis, "y": "nombre de fichiers"})
 st.plotly_chart(fig, use_container_width=True)
 
 st.caption(f"{len(filtered)} fichiers apres filtrage (sur {len(df)} au total)")
