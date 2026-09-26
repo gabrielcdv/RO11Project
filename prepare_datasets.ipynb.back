@@ -1,0 +1,183 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "0",
+   "metadata": {},
+   "source": [
+    "# Berlin EmoDB -> spectrogrammes RGB\n",
+    "\n",
+    "Telecharge la base Berlin EmoDB et convertit chaque fichier wav en une image RGB de son mel-spectrogramme.\n",
+    "\n",
+    "Pretraitement : 16 kHz mono, fenetre de 3 s, trames de 25 ms toutes les 10 ms,\n",
+    "64 bandes mel en dB, standardisees (z-score par extrait)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "1",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Note: you may need to restart the kernel to use updated packages.\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "\n",
+      "[notice] A new release of pip is available: 25.3 -> 26.2.1\n",
+      "[notice] To update, run: python.exe -m pip install --upgrade pip\n"
+     ]
+    }
+   ],
+   "source": [
+    "# deps (deja installees dans .venv, selectionner le kernel \"Python (CNN_RO11 .venv)\")\n",
+    "%pip install -q librosa matplotlib numpy soundfile pillow nbstripout\n",
+    "\n",
+    "# filtre git : retire les sorties et la metadata des .ipynb commites.\n",
+    "# A relancer une fois par clone (le filtre vit dans .git/config, qui n'est pas suivi).\n",
+    "import sys\n",
+    "!{sys.executable} -m nbstripout --install --attributes .gitattributes"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "2",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import io, zipfile, urllib.request\n",
+    "from pathlib import Path\n",
+    "\n",
+    "import librosa\n",
+    "import numpy as np\n",
+    "from matplotlib import cm\n",
+    "from PIL import Image\n",
+    "\n",
+    "#URL d'acces : https://zenodo.org/records/17651657\n",
+    "URL = \"http://emodb.bilderbar.info/download/download.zip\"\n",
+    "RAW = Path(\"data/emodb\")\n",
+    "OUT = Path(\"data/spectrograms\")\n",
+    "\n",
+    "# code emotion = 6eme caractere du nom de fichier (ex: 03a01Fa.wav -> F -> joie)\n",
+    "EMOTIONS = {\n",
+    "    \"W\": \"anger\", \"L\": \"boredom\", \"E\": \"disgust\", \"A\": \"fear\",\n",
+    "    \"F\": \"happiness\", \"T\": \"sadness\", \"N\": \"neutral\",\n",
+    "}"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "3",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "downloading...\n",
+      "535 fichiers wav\n"
+     ]
+    }
+   ],
+   "source": [
+    "# 1. telechargement + extraction\n",
+    "if not RAW.exists():\n",
+    "    RAW.mkdir(parents=True)\n",
+    "    print(\"downloading...\")\n",
+    "    data = urllib.request.urlopen(URL).read()\n",
+    "    zipfile.ZipFile(io.BytesIO(data)).extractall(RAW)\n",
+    "\n",
+    "wavs = sorted(RAW.rglob(\"*.wav\"))\n",
+    "print(len(wavs), \"fichiers wav\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "4",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "images ecrites dans data\\spectrograms\n"
+     ]
+    }
+   ],
+   "source": [
+    "# 2. wav -> mel-spectrogramme -> image RGB\n",
+    "SR = 16000              # 16 kHz mono\n",
+    "DURATION = 3.0          # fenetre de 3 s (padding / troncature)\n",
+    "N_FFT = int(0.025 * SR)  # trames de 25 ms  -> 400 echantillons\n",
+    "HOP = int(0.010 * SR)    # pas de 10 ms     -> 160 echantillons\n",
+    "N_MELS = 64             # 64 bandes mel\n",
+    "N_FRAMES = int(DURATION * SR / HOP)  # 300 trames\n",
+    "\n",
+    "def wav_to_rgb(path):\n",
+    "    y, sr = librosa.load(path, sr=SR, mono=True)\n",
+    "    y = librosa.util.fix_length(y, size=int(DURATION * SR))  # 3 s exactement\n",
+    "    mel = librosa.feature.melspectrogram(\n",
+    "        y=y, sr=sr, n_fft=N_FFT, hop_length=HOP, win_length=N_FFT, n_mels=N_MELS\n",
+    "    )\n",
+    "    db = librosa.power_to_db(mel)[:, :N_FRAMES]  # (64, 300)\n",
+    "    z = (db - db.mean()) / (db.std() + 1e-9)     # standardisation par extrait\n",
+    "    norm = np.clip(z, -3, 3) / 6 + 0.5           # +/-3 sigma -> 0..1\n",
+    "    rgb = (cm.viridis(norm[::-1])[..., :3] * 255).astype(np.uint8)  # basses freq en bas\n",
+    "    return Image.fromarray(rgb)\n",
+    "\n",
+    "for wav in wavs:\n",
+    "    label = EMOTIONS[wav.stem[5]]\n",
+    "    dest = OUT / label\n",
+    "    dest.mkdir(parents=True, exist_ok=True)\n",
+    "    wav_to_rgb(wav).save(dest / f\"{wav.stem}.png\")\n",
+    "\n",
+    "print(\"images ecrites dans\", OUT)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "5",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# 3. verification rapide\n",
+    "for d in sorted(OUT.iterdir()):\n",
+    "    print(d.name, len(list(d.glob(\"*.png\"))))\n",
+    "\n",
+    "display(Image.open(next(OUT.rglob(\"*.png\"))))"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": ".venv (3.14.3.final.0)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.14.3"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
