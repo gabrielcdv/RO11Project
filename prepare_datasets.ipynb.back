@@ -15,10 +15,27 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
+   "execution_count": 1,
    "id": "1",
    "metadata": {},
-   "outputs": [],
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Note: you may need to restart the kernel to use updated packages.\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "\n",
+      "[notice] A new release of pip is available: 25.3 -> 26.2.1\n",
+      "[notice] To update, run: python.exe -m pip install --upgrade pip\n"
+     ]
+    }
+   ],
    "source": [
     "# deps (deja installees dans .venv, selectionner le kernel \"Python (CNN_RO11 .venv)\")\n",
     "%pip install -q librosa matplotlib numpy soundfile pillow nbstripout\n",
@@ -44,6 +61,7 @@
     "from matplotlib import cm\n",
     "from PIL import Image\n",
     "\n",
+    "#URL d'acces : https://zenodo.org/records/17651657\n",
     "URL = \"http://emodb.bilderbar.info/download/download.zip\"\n",
     "RAW = Path(\"data/emodb\")\n",
     "OUT = Path(\"data/spectrograms\")\n",
@@ -57,10 +75,19 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
+   "execution_count": 3,
    "id": "3",
    "metadata": {},
-   "outputs": [],
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "downloading...\n",
+      "535 fichiers wav\n"
+     ]
+    }
+   ],
    "source": [
     "# 1. telechargement + extraction\n",
     "if not RAW.exists():\n",
@@ -75,10 +102,18 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
+   "execution_count": 5,
    "id": "4",
    "metadata": {},
-   "outputs": [],
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "images ecrites dans data\\spectrograms\n"
+     ]
+    }
+   ],
    "source": [
     "# 2. wav -> mel-spectrogramme -> image RGB\n",
     "SR = 16000              # 16 kHz mono\n",
@@ -126,7 +161,7 @@
  ],
  "metadata": {
   "kernelspec": {
-   "display_name": ".venv (3.14.4)",
+   "display_name": ".venv (3.14.3.final.0)",
    "language": "python",
    "name": "python3"
   },
@@ -140,7 +175,7 @@
    "name": "python",
    "nbconvert_exporter": "python",
    "pygments_lexer": "ipython3",
-   "version": "3.14.4"
+   "version": "3.14.3"
   }
  },
  "nbformat": 4,
