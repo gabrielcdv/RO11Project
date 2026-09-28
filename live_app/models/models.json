@@ -1,0 +1,138 @@
+{
+  "spec": {
+    "sr": 16000,
+    "duration": 3.0,
+    "min_seg": 1.0,
+    "n_fft": 400,
+    "hop": 160,
+    "n_mels": 64
+  },
+  "models": [
+    {
+      "id": "cnn_emodb",
+      "label": "CNN from scratch \u00b7 EmoDB",
+      "file": "cnn_emodb.onnx",
+      "arch": "cnn",
+      "datasets": [
+        "EmoDB"
+      ],
+      "classes": [
+        "anger",
+        "boredom",
+        "disgust",
+        "fear",
+        "happiness",
+        "neutral",
+        "sadness"
+      ],
+      "img_size": 128,
+      "channels": 1,
+      "mean": [
+        0.5
+      ],
+      "std": [
+        0.5
+      ],
+      "val_accuracy": 0.76
+    },
+    {
+      "id": "resnet_emodb",
+      "label": "ResNet-18 transfer \u00b7 EmoDB",
+      "file": "resnet_emodb.onnx",
+      "arch": "resnet",
+      "datasets": [
+        "EmoDB"
+      ],
+      "classes": [
+        "anger",
+        "boredom",
+        "disgust",
+        "fear",
+        "happiness",
+        "neutral",
+        "sadness"
+      ],
+      "img_size": 224,
+      "channels": 3,
+      "mean": [
+        0.485,
+        0.456,
+        0.406
+      ],
+      "std": [
+        0.229,
+        0.224,
+        0.225
+      ],
+      "val_accuracy": 0.76
+    },
+    {
+      "id": "cnn_all",
+      "label": "CNN from scratch \u00b7 all datasets",
+      "file": "cnn_all.onnx",
+      "arch": "cnn",
+      "datasets": [
+        "CREMA-D",
+        "EmoDB",
+        "RAVDESS",
+        "emoUERJ"
+      ],
+      "classes": [
+        "anger",
+        "boredom",
+        "calm",
+        "disgust",
+        "fear",
+        "happiness",
+        "neutral",
+        "sadness",
+        "surprise"
+      ],
+      "img_size": 128,
+      "channels": 1,
+      "mean": [
+        0.5
+      ],
+      "std": [
+        0.5
+      ],
+      "val_accuracy": 0.51
+    },
+    {
+      "id": "resnet_all",
+      "label": "ResNet-18 transfer \u00b7 all datasets",
+      "file": "resnet_all.onnx",
+      "arch": "resnet",
+      "datasets": [
+        "CREMA-D",
+        "EmoDB",
+        "RAVDESS",
+        "emoUERJ"
+      ],
+      "classes": [
+        "anger",
+        "boredom",
+        "calm",
+        "disgust",
+        "fear",
+        "happiness",
+        "neutral",
+        "sadness",
+        "surprise"
+      ],
+      "img_size": 224,
+      "channels": 3,
+      "mean": [
+        0.485,
+        0.456,
+        0.406
+      ],
+      "std": [
+        0.229,
+        0.224,
+        0.225
+      ],
+      "val_accuracy": 0.53
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Voice emotion</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/ort.wasm.min.js"></script>
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Voice emotion</h1>
+      <p class="muted">Record a sentence, get the emotion. Everything runs in your browser:
+        the audio never leaves your device.</p>
+    </header>
+
+    <section class="card">
+      <h2>1. Model</h2>
+      <div class="row">
+        <span class="label">Architecture</span>
+        <div class="segmented" role="radiogroup">
+          <label><input type="radio" name="arch" value="cnn" checked><span>CNN from scratch</span></label>
+          <label><input type="radio" name="arch" value="resnet"><span>ResNet-18 transfer</span></label>
+        </div>
+      </div>
+      <div class="row">
+        <span class="label">Trained on</span>
+        <div class="segmented" role="radiogroup">
+          <label><input type="radio" name="data" value="emodb" checked><span>EmoDB only</span></label>
+          <label><input type="radio" name="data" value="all"><span>All datasets</span></label>
+        </div>
+      </div>
+      <p id="model-info" class="muted small"></p>
+    </section>
+
+    <section class="card">
+      <h2>2. Voice sample</h2>
+      <div class="controls">
+        <button id="record" class="primary" disabled>● Record</button>
+        <span id="timer" class="muted">0.0 s</span>
+        <span class="muted">or</span>
+        <label class="file">Upload audio<input id="upload" type="file" accept="audio/*"></label>
+      </div>
+      <audio id="player" controls hidden></audio>
+      <p class="muted small">Tip: speak for 2–10 s and act the emotion out. The models were
+        trained on actors (EmoDB is in German), so expect them to be less accurate on you.</p>
+    </section>
+
+    <section class="card">
+      <h2>3. Result</h2>
+      <p id="status" class="muted">Waiting for a recording.</p>
+      <div id="result" hidden>
+        <div class="verdict"><span id="emoji"></span><div><strong id="top"></strong><span id="conf" class="muted"></span></div></div>
+        <ul id="bars"></ul>
+        <details>
+          <summary>Mel-spectrograms fed to the model</summary>
+          <div id="specs"></div>
+        </details>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
