@@ -81,3 +81,9 @@ files, the confusion matrices and the checkpoints into `results/<config>/`.
 
 All outputs are written
 up in [RESULTS.md](RESULTS.md).
+
+## 6. Live app
+
+As requested in class, we made a live app (with AI) that is using our trained models on a voice sample that one can upload or record directly within the app
+
+Link : [https://ro11-murex.vercel.app/](https://ro11-murex.vercel.app/) (inference can take more than 10s)
