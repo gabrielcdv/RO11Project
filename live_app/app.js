@@ -14,6 +14,9 @@ const dsp = createDsp(spec, tables);
 ort.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/";
 
 const sessions = new Map();  // model id -> Promise<InferenceSession>, loaded on first use
+const loaded = new Set();    // model ids whose session is ready
+const received = new Map();  // model id -> bytes downloaded so far
+let loadingId = null;        // model whose download progress is shown
 let images = null;           // spectrograms of the current recording
 let runId = 0;               // ignore results of a prediction superseded by a newer one
 
@@ -33,12 +36,49 @@ function showModelInfo() {
 
 function session(m) {
   if (!sessions.has(m.id)) {
-    sessions.set(m.id, ort.InferenceSession.create(`models/${m.file}`).catch((e) => {
-      sessions.delete(m.id);
-      throw e;
-    }));
+    const onProgress = (bytes) => {
+      received.set(m.id, bytes);
+      if (loadingId === m.id) showDownload(m);
+    };
+    sessions.set(m.id, download(`models/${m.file}`, onProgress)
+      .then((buf) => ort.InferenceSession.create(buf))
+      .then((s) => { loaded.add(m.id); return s; })
+      .catch((e) => {
+        sessions.delete(m.id);
+        received.delete(m.id);
+        throw e;
+      }));
   }
   return sessions.get(m.id);
+}
+
+// fetch that reports the number of bytes received so far
+async function download(url, onProgress) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
+  const reader = res.body.getReader();
+  const parts = [];
+  let bytes = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    parts.push(value);
+    bytes += value.length;
+    onProgress(bytes);
+  }
+  const buf = new Uint8Array(bytes);
+  let offset = 0;
+  for (const part of parts) {
+    buf.set(part, offset);
+    offset += part.length;
+  }
+  return buf;
+}
+
+function showDownload(m) {
+  const bytes = received.get(m.id) ?? 0;
+  const mb = (n) => Math.round(n / 1e6);
+  setStatus(`Loading the model (${mb(bytes)} / ${mb(m.bytes)} MB)…`, false, Math.min(bytes / m.bytes, 1));
 }
 
 // ---------- audio in ----------
@@ -62,7 +102,9 @@ async function decode(blob) {
 async function handleAudio(blob) {
   $("player").src = URL.createObjectURL(blob);
   $("player").hidden = false;
-  setStatus("Computing the spectrograms…");
+  const id = ++runId;  // drop any prediction still running on the previous recording
+  loadingId = null;
+  setStatus("Decoding the audio…", false, null);
   try {
     const y = trimSilence(await decode(blob), spec.sr);
     const chunks = dsp.splitChunks(y);
@@ -71,7 +113,15 @@ async function handleAudio(blob) {
       $("result").hidden = true;
       return setStatus("Too short: speak for at least one second.", true);
     }
-    images = chunks.map(dsp.melImage);
+    const imgs = [];
+    for (const chunk of chunks) {
+      setStatus(`Computing the spectrograms (${imgs.length + 1} / ${chunks.length})…`, false,
+        imgs.length / chunks.length);
+      await new Promise((r) => setTimeout(r));  // let the progress bar repaint
+      imgs.push(dsp.melImage(chunk));
+    }
+    if (id !== runId) return;
+    images = imgs;
     drawSpectrograms(images);
     await predict();
   } catch (e) {
@@ -123,10 +173,13 @@ async function predict() {
   if (!images) return;
   const id = ++runId;
   const m = currentModel();
-  if (!sessions.has(m.id)) setStatus(`Loading the model (${m.arch === "resnet" ? "45" : "5"} MB)…`);
+  loadingId = loaded.has(m.id) ? null : m.id;
+  if (loadingId) showDownload(m);
   try {
     const s = await session(m);
-    setStatus("Running the model…");
+    if (id !== runId) return;
+    loadingId = null;
+    setStatus("Running the model…", false, null);
     const size = m.channels * m.img_size * m.img_size;
     const batch = new Float32Array(images.length * size);
     images.forEach((img, i) => batch.set(toTensor(img, m), i * size));
@@ -155,9 +208,14 @@ function averageSoftmax(logits, n, k) {
 
 // ---------- display ----------
 
-function setStatus(text, error = false) {
+// progress: undefined hides the bar, null shows it indeterminate, a number in [0, 1] fills it
+function setStatus(text, error = false, progress) {
   $("status").textContent = text;
   $("status").style.color = error ? "var(--danger)" : "";
+  const bar = $("progress");
+  bar.hidden = progress === undefined;
+  if (progress == null) bar.removeAttribute("value");
+  else bar.value = progress;
 }
 
 function showResult(m, probs) {

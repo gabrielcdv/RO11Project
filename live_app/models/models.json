@@ -12,6 +12,7 @@
       "id": "cnn_emodb",
       "label": "CNN from scratch \u00b7 EmoDB",
       "file": "cnn_emodb.onnx",
+      "bytes": 4697879,
       "arch": "cnn",
       "datasets": [
         "EmoDB"
@@ -39,6 +40,7 @@
       "id": "resnet_emodb",
       "label": "ResNet-18 transfer \u00b7 EmoDB",
       "file": "resnet_emodb.onnx",
+      "bytes": 44710918,
       "arch": "resnet",
       "datasets": [
         "EmoDB"
@@ -70,6 +72,7 @@
       "id": "cnn_all",
       "label": "CNN from scratch \u00b7 all datasets",
       "file": "cnn_all.onnx",
+      "bytes": 4699935,
       "arch": "cnn",
       "datasets": [
         "CREMA-D",
@@ -102,6 +105,7 @@
       "id": "resnet_all",
       "label": "ResNet-18 transfer \u00b7 all datasets",
       "file": "resnet_all.onnx",
+      "bytes": 44715024,
       "arch": "resnet",
       "datasets": [
         "CREMA-D",

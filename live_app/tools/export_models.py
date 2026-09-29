@@ -120,6 +120,7 @@ def main():
 
         entries.append({
             "id": model_id, "label": label, "file": onnx_path.name,
+            "bytes": onnx_path.stat().st_size,
             "arch": "resnet" if channels == 3 else "cnn",
             "datasets": ckpt["datasets"], "classes": ckpt["classes"],
             "img_size": size, "channels": channels, "mean": norm["mean"], "std": norm["std"],
